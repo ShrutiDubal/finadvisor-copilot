@@ -26,7 +26,11 @@ def _get_allowed_origins() -> list[str]:
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="FinAdvisor Copilot API", version="0.1.0")
+    app = FastAPI(
+        title="FinAdvisor Copilot API",
+        version="0.1.0",
+        root_path="/api/backend" if os.getenv("VERCEL") else "",
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
