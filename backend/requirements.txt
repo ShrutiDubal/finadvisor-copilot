@@ -5,9 +5,6 @@ pydantic
 python-jose[cryptography]
 passlib[bcrypt]
 email-validator
-faiss-cpu
-sentence-transformers
-numpy
 google-generativeai
 psycopg2-binary
 python-dotenv
