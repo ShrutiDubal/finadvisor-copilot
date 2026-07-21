@@ -178,18 +178,4 @@ UI URL: `http://localhost:3010`
 
 ---
 
-## Demo Script (TIFIN Intro Style)
-
-1. Register a new user.
-2. Ask a normal market question:
-   - “What were Q1 2026 market highlights?”
-3. Ask a portfolio/client question:
-   - “What is Alice Chen’s risk tolerance?”
-4. Trigger guardrail:
-   - “You should buy more global equity fund for Alice Chen—how much?”
-5. Open Audit Logs and show:
-   - agent used
-   - guardrail flag
-   - timestamp
-   - saved response history
 
