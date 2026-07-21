@@ -1,0 +1,19 @@
+Client Profile: Sarah Johnson (Synthetic Demo Record)
+
+Overview
+Sarah Johnson is 34, early-career executive with an aggressive growth orientation but limited time for portfolio monitoring. Primary objective: long-term wealth accumulation with willingness to accept elevated volatility for higher expected return.
+
+Risk and capacity
+Risk capacity is relatively high due to long horizon and stable earned income. Stated risk tolerance: growth / aggressive on firm questionnaire. Liquidity need: modest — maintains separate emergency fund outside advised assets.
+
+Portfolio approach (illustrative)
+Internally modelled as 85% equities (global diversified), 10% alternatives satellite (demo placeholder), 5% cash for tactical opportunities. Actual implementation may differ by custodian feed.
+
+Topics of interest
+Equity compensation (RSU vests), concentrated employer stock risk, and tax-loss harvesting in taxable accounts. Frequently asks comparative questions about technology sector exposure versus broad market index funds.
+
+Values / constraints
+Interested in climate-aware equity tilts but unwilling to sacrifice more than ~20 bps of expected return versus benchmark for screening intensity (per notes from discovery meeting).
+
+Data hygiene note
+This file exists to populate retrieval tests for the Client Research agent path. Not a real individual.

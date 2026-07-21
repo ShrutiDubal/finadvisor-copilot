@@ -1,0 +1,18 @@
+Rates, Credit, and Liquidity — Q1 2026 Market Context
+
+This note supplements the main Q1 2026 market summary. Use it for questions about interest rates, bond markets, credit conditions, and liquidity in the first quarter of 2026.
+
+Policy rates
+The Federal Reserve, ECB, and Bank of England all left benchmark rates unchanged through Q1 2026. Market pricing implied shallow cuts later in 2026 contingent on continued disinflation, but officials emphasized data dependence.
+
+Yield curves
+Curve shapes were flatter than in 2025. Short-dated paper was anchored by policy, while long-end yields reacted to term premium and fiscal supply debate. Advisors discussing “rates market highlights” for Q1 2026 should note range-bound long yields rather than a sustained bear steepener.
+
+Credit
+Investment-grade issuance was orderly; non-financial corporates in technology and healthcare dominated new supply. Loan markets saw tighter spreads in software LBO paper but wider spreads in cyclical issuers tied to manufacturing PMIs. Structured credit (CLO mezzanine) saw stable demand from institutional buyers.
+
+Liquidity
+Money-market funds held elevated balances. Repo markets functioned normally aside from quarter-end window dressing. No systemic stress events were recorded in Q1 2026.
+
+Regulatory / market-structure footnote (demo content)
+Internal compliance reminds advisors that this text is illustrative portfolio commentary for the demo knowledge base, not a forecast or recommendation.

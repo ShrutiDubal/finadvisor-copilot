@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  api:
+    image: python:3.11-slim
+    command: echo "Phase 8 will define full API container runtime"
+
+  frontend:
+    image: node:20-alpine
+    command: echo "Phase 8 will define full frontend container runtime"
+
+  nginx:
+    image: nginx:stable-alpine
+    command: echo "Phase 8 will define reverse proxy config"

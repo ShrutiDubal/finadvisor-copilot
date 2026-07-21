@@ -1,0 +1,22 @@
+Client Profile: Alice Chen (Synthetic Demo Record)
+
+Advisory essentials
+Alice Chen is a 42-year-old professional with a moderate risk profile and a primary goal of retirement in roughly 20 years. She prefers clear explanations of trade-offs between growth and volatility rather than product detail dumps.
+
+Current portfolio summary (demo)
+Target strategic allocation discussed in last review: 60% equities, 30% bonds, 10% cash and equivalents. Implementation is via a core global equity fund sleeve, a short-to-intermediate investment-grade bond ladder, and a money-market reserve.
+
+Risk tolerance and behaviour
+Questionnaires and conversation history indicate comfort with typical equity drawdowns in the high-teens over a full market cycle but discomfort with concentrated single-stock risk. She has not requested leveraged or options-based strategies.
+
+Tax and account context (illustration)
+Assets are split between a taxable brokerage account and a firm-sponsored retirement plan. Specific tax lots are maintained in the custodial system; this profile does not list individual positions by lot.
+
+Goals and milestones
+Near-term: maintain emergency reserve of six months expenses in cash instruments. Medium-term: increase retirement deferral rate if bonus permits. Long-term: retire at 62–65 with inflation-adjusted spending at ~70% of final pre-retirement income (planning assumption only).
+
+Communication preferences
+Prefers email summaries after meetings and quarterly performance letters with benchmark context. Opted into ESG preference screening at “moderate” intensity — excludes only severe controversies flagged by the vendor data feed (demo process).
+
+Compliance reminder
+This dossier is fabricated for the FinAdvisor Copilot demo environment. Do not treat as real client PII.

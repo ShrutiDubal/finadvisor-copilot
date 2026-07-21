@@ -1,0 +1,29 @@
+Fund Factsheet: Global Equity Fund (Demo Series)
+
+Identification
+Fund name: Global Equity Fund — Core Series (internal ticker: GLO-EQ-CORE). Benchmark: MSCI ACWI Net (USD). Base currency: USD. The factsheet below is synthetic demo content for the FinAdvisor Copilot knowledge base.
+
+Assets and scale
+Assets Under Management (AUM): USD 2.4 billion as of 31 March 2026 (Pro Forma for advisor demo). Daily liquidity: typically T+2 for subscriptions and redemptions in USD share class.
+
+Investment objective and strategy
+The fund seeks long-term capital growth by investing primarily in large- and mid-cap equities across developed and emerging markets. The portfolio is benchmark-aware but allows active country and sector tilts of typically ±6% versus the benchmark at the sleeve level (internal risk budget).
+
+Performance snapshot (illustrative, not audited)
+5-year annualised return (USD): 11.2%.
+3-year annualised return (USD): 9.8%.
+1-year return (USD): 7.4%.
+Calendar year 2025 return (USD): 12.1%.
+Q1 2026 return (USD): approximately +3.8% (subject to final accounting; included so advisors can discuss recent quarterly behaviour in client meetings).
+
+Costs
+Total expense ratio: 0.45% p.a. for the Institutional share class shown in internal materials. Other share classes may carry different loads or fees; verify current prospectus supplement before client conversations.
+
+Holdings and exposures
+Top holdings (illustrative, not exhaustive): Apple, Microsoft, Amazon, ASML, Taiwan Semiconductor Manufacturing Company, Nestlé, UnitedHealth Group, Toyota Motor. Sector tilt as of quarter-end tended slightly overweight technology and communication services versus MSCI ACWI.
+
+Risk factors
+Currency risk is material because the fund holds non-USD names. Equity market risk is primary. Emerging market exposure may increase volatility. The fund does not use leverage; derivatives may be used for hedging and efficient portfolio management only.
+
+Suitability notes for advisors
+Often discussed for clients with moderate-to-high risk tolerance and long investment horizons. Not a substitute for customised portfolio construction; use only in context of the client’s IPS and firm policy. This factsheet does not constitute an offer or recommendation.
