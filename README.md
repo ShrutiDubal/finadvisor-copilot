@@ -1,91 +1,79 @@
 # FinAdvisor Copilot
 
-Compliance-aware, multi-agent financial advisor copilot with grounded retrieval, guardrails, and audit logging.
+Compliance-aware advisor copilot: **retrieve → guard → route → generate → guard → audit**.
 
-## What We Built
-
-FinAdvisor Copilot is an end-to-end demo app designed for advisor workflows:
-
-- Multi-agent query routing (`portfolio`, `client_research`, `market_context`, plus `auto` mode).
-- Retrieval-augmented generation (RAG) using local knowledge base files + FAISS embeddings.
-- Compliance guardrail checks before and after generation.
-- Grounded responses that include retrieved source docs in API payloads.
-- JWT auth with register/login and protected chat/logs endpoints.
-- SQLite audit trail of user interactions and guardrail outcomes.
-- Two frontend options:
-  - `frontend/`: Next.js app (recommended, runs on `3020`).
-  - `frontend-node/`: Express-rendered UI (runs on `3010`).
+Built as an end-to-end demo for advisor workflows — not a generic finance chatbot. Answers must stay grounded in a local knowledge base, avoid direct product recommendations, and leave a trace of what happened.
 
 ---
 
-## Tech Stack
+## Problem
 
-### Backend
+Advisors ask questions across **client profiles**, **portfolio / allocation language**, and **market or fund notes**. A raw LLM will invent numbers and phrase advice as “you should buy…”. In a regulated-style setting that is a product failure, not a UX nit.
 
-- Python
-- FastAPI
-- SQLAlchemy
-- SQLite
-- JWT auth (`python-jose`)
-- Password hashing (`bcrypt`)
-- `faiss-cpu`
-- `sentence-transformers` (`all-MiniLM-L6-v2`)
-- Gemini (`google-generativeai`)
+This app treats that as a pipeline problem:
 
-### Frontend (Primary)
+1. Only answer from retrieved documents.
+2. Block recommendation-style language on the **query** and on the **model output**.
+3. Show sources in the UI.
+4. Persist query, agent, guardrail flag, and response per user.
 
-- Next.js `16.2.5`
-- React `19`
-- TypeScript
-- `react-markdown`
-
-### Frontend (Alternate Legacy UI)
-
-- Node.js
-- Express
-- Vanilla JS + server-rendered HTML
+Knowledge base content is **synthetic demo data** (not real client PII).
 
 ---
 
-## Repository Structure
+## What shipped
+
+- **Auth:** register / login, bcrypt passwords, JWT on protected chat and logs routes.
+- **RAG:** load `backend/data/knowledge_base/*.txt`, score documents against the query, return top-k with source names.
+- **Agents:** `portfolio`, `client_research`, `market_context`, plus `auto` keyword routing (client names and suitability phrases win over generic words like “risk”).
+- **Guardrails:** case-insensitive phrase checks before generation (skip the LLM) and after generation (replace unsafe text).
+- **LLM:** Gemini with a strict “context-only” system prompt; model-id fallbacks; grounded extract if the API key or model is unavailable.
+- **Audit:** SQLite `chat_messages` (per-user history + logs UI) and `audit_logs` (includes retrieved-doc JSON).
+- **UI:** Next.js chat (agent picker, top-k, sources, guardrail badge) and an audit log page. Legacy Express UI in `frontend-node/`.
+
+---
+
+## Tech stack
+
+| Layer | Choice | Why |
+| --- | --- | --- |
+| API | Python, FastAPI, Pydantic | Typed request validation, OpenAPI, clean routers/services split |
+| DB | SQLAlchemy + SQLite (Postgres URL already supported) | Zero-ops local demo; `DATABASE_URL` can point at Postgres |
+| Auth | JWT (`python-jose`) + bcrypt | Stateless API for a separate frontend origin |
+| Retrieval | Lexical scoring over whole KB files | Small, name-heavy corpus; scores are inspectable; no extra embedding runtime |
+| Generation | Gemini (`google-generativeai`, default `gemini-2.5-flash`) | Fast/cheap grounded summarization |
+| Frontend | Next.js 16, React 19, TypeScript, `react-markdown` | Product-shaped chat + logs, not a notebook |
+| Deploy notes | `vercel.json` backend prefix `/api/backend`, Railway Dockerfile | Frontend/API split; `root_path` when `VERCEL` is set |
+
+---
+
+## How a request runs (`POST /chat`)
 
 ```text
-.
-├── backend/
-│   ├── app/
-│   │   ├── core/            # settings, security
-│   │   ├── db/              # SQLAlchemy engine/session/base
-│   │   ├── deps/            # auth dependency helpers
-│   │   ├── models/          # User, ChatMessage, AuditLog
-│   │   ├── routers/         # auth, chat, logs, health
-│   │   └── services/        # RAG, guardrail, router, LLM pipeline
-│   ├── data/knowledge_base/ # source .txt docs used for retrieval
-│   ├── requirements.txt
-│   └── .env                 # local secrets (not committed)
-├── frontend/                # Next.js UI
-└── frontend-node/           # Express UI
+JWT user
+  → retrieve top-k docs (keyword overlap + named-client boost)
+  → guardrail on QUERY
+        hit  → safe fallback, agent_used = guardrail_blocked, no LLM
+        miss → classify agent (auto) or use explicit agent
+             → Gemini (context-only prompt)
+             → guardrail on RESPONSE (replace if hit)
+  → write AuditLog + ChatMessage
+  → return { response, agent_used, guardrail_triggered, retrieved_docs }
 ```
 
----
+**Retrieval (what actually runs):** tokenize the query, drop stopwords, score each `.txt` file by term hits. If the query names a known person (first **and** last name: Alice Chen, Bob Martinez, Sarah Johnson), boost that profile and penalize other people. Keep docs scoring at least 50% of the best match, then take top-k (default 3, UI range 1–10).
 
-## Core Product Flow
+This is **not** a FAISS / embedding index. Embeddings are a natural next step when the corpus grows; lexical search is the right default for this closed, entity-specific set.
 
-1. User authenticates (`/auth/register`, `/auth/login`) and gets JWT.
-2. User sends query to `POST /chat`.
-3. Backend retrieves top-k context from FAISS index.
-4. Guardrail checks the query:
-   - If blocked phrase is detected, return safe fallback from retrieved docs.
-5. If allowed, router chooses agent (`auto` or explicit).
-6. Gemini generates response using strict “context-only” instructions.
-7. Guardrail checks generated response again.
-8. Backend stores audit + chat records in SQLite.
-9. Response is returned with `agent_used`, `guardrail_triggered`, and `retrieved_docs`.
+**Routing:** keyword classifier. Order is intentional: client-research first, then portfolio, then market, else portfolio. The agent label is stored and shown in the UI. Retrieval is still over the full KB (domain-filtered retrieve is a clear follow-up).
+
+**Generation prompt (intent):** answer only from provided context; do not invent data; do not inline citations (the UI shows sources); stay on the named person; if context is thin, say so.
 
 ---
 
-## Compliance Guardrail (Current Rules)
+## Guardrail phrases
 
-Guardrail trigger patterns are phrase-based (case-insensitive), e.g.:
+Case-insensitive substrings:
 
 - `you should buy`
 - `i recommend purchasing`
@@ -94,11 +82,67 @@ Guardrail trigger patterns are phrase-based (case-insensitive), e.g.:
 - `will definitely`
 - `sure to profit`
 
-When triggered, the system avoids direct advisory output and returns a safe, grounded fallback summary.
+Fallback: no direct recommendation; retrieved sources still returned for the advisor to read.
 
 ---
 
-## Environment Variables
+## Knowledge base
+
+| File | Typical questions |
+| --- | --- |
+| `client_profile_alice_chen.txt` | Moderate risk, ~60/30/10, ~20-year retirement horizon |
+| `client_profile_bob_martinez.txt` | Moderate-conservative, income / drawdown, 6–8 years to retirement |
+| `client_profile_sarah_johnson.txt` | Aggressive / growth, high equity sleeve |
+| `fund_factsheet_global_equity.txt` | AUM, expense ratio, returns (demo figures) |
+| `market_summary_q1_2026.txt` | Q1 2026 highlights and risks |
+| `market_outlook_rates_credit_q1_2026.txt` | Rates, credit, liquidity |
+| `regional_equity_performance_q1_2026.txt` | Regional equity drivers |
+
+Restart is not required for retrieval (docs load on first retrieve). Edit a file and send a new query.
+
+---
+
+## Try these in the UI
+
+Safe / grounded:
+
+- What is Alice Chen's risk tolerance?
+- Summarise Bob Martinez's investment goals
+- What were Q1 2026 market highlights?
+- Show me the global equity fund AUM
+
+Guardrail (should block generation):
+
+- You should buy the global equity fund
+
+Then open **Audit log** and confirm agent + guardrail status.
+
+---
+
+## Repository structure
+
+```text
+.
+├── backend/
+│   ├── app/
+│   │   ├── core/            # settings, JWT / password helpers
+│   │   ├── db/              # SQLAlchemy engine / session
+│   │   ├── deps/            # get_current_user
+│   │   ├── models/          # User, ChatMessage, AuditLog
+│   │   ├── routers/         # auth, chat, logs, health
+│   │   └── services/        # RAG, guardrail, router, Gemini
+│   ├── data/knowledge_base/ # source .txt docs
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/                # Next.js (port 3020)
+├── frontend-node/           # Express UI (port 3010)
+├── vercel.json              # frontend + backend services, /api/backend prefix
+└── railway.toml             # backend image, /health check
+```
+
+---
+
+## Environment
 
 Create `backend/.env`:
 
@@ -112,25 +156,27 @@ GEMINI_API_KEY=your_google_gemini_key
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
+Frontend: `NEXT_PUBLIC_API_BASE_URL` (defaults to `http://127.0.0.1:8000`).
+
+Optional: `FINADVISOR_FAST_DEMO=1` skips Gemini and returns short grounded stubs (demo only).
+
 ---
 
-## Local Setup
+## Local setup
 
-## 1) Backend
+### 1) Backend
 
 ```bash
 cd backend
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-API base URL: `http://localhost:8000`
+API: `http://localhost:8000`
 
-> Note: FAISS index is built at backend startup from `backend/data/knowledge_base/*.txt`. Restart backend after editing KB files.
-
-## 2) Frontend (Recommended: Next.js)
+### 2) Frontend (recommended)
 
 ```bash
 cd frontend
@@ -138,9 +184,9 @@ npm install
 npm run dev
 ```
 
-UI URL: `http://localhost:3020`
+UI: `http://localhost:3020`
 
-## 3) Alternate Frontend (Express)
+### 3) Alternate frontend
 
 ```bash
 cd frontend-node
@@ -148,34 +194,46 @@ npm install
 npm start
 ```
 
-UI URL: `http://localhost:3010`
+UI: `http://localhost:3010`
 
 ---
 
-## API Endpoints
+## API
 
-### Health
+| Method | Path | Auth |
+| --- | --- | --- |
+| `GET` | `/health` | no |
+| `POST` | `/auth/register` | no |
+| `POST` | `/auth/login` | no |
+| `GET` | `/chat/status` | no |
+| `GET` | `/chat/history` | yes |
+| `POST` | `/chat/retrieve` | no |
+| `POST` | `/chat/guardrail-check` | no |
+| `POST` | `/chat/agent-run` | no |
+| `POST` | `/chat` | yes |
+| `GET` | `/logs/status` | yes |
+| `GET` | `/logs` | yes |
 
-- `GET /health`
-
-### Auth
-
-- `POST /auth/register`
-- `POST /auth/login`
-
-### Chat / Pipeline
-
-- `GET /chat/status`
-- `POST /chat/retrieve`
-- `POST /chat/guardrail-check`
-- `POST /chat/agent-run`
-- `POST /chat` (main endpoint)
-
-### Logs
-
-- `GET /logs/status` (auth required)
-- `GET /logs` (auth required)
+On Vercel, the API is mounted under `/api/backend` (`root_path` when `VERCEL` is set).
 
 ---
 
+## Design choices (interview)
 
+- **Lexical RAG vs embeddings:** corpus is small and entity-specific. “Alice Chen” must not retrieve Sarah. Keyword overlap plus a named-person boost is cheaper, faster, and easier to debug than a vector index. Next experiment: chunk market notes, embed, A/B hit@k vs this scorer.
+- **Keyword router vs LLM router:** deterministic, free, and ordered so client names beat the word “risk”. An LLM router is a later eval, not a default.
+- **Two guardrails:** do not pay for a banned query; still catch recommendation language in the completion.
+- **Phrase list vs classifier:** auditable and cheap. Weak on paraphrase — that is the next eval set (precision/recall), not a reason to skip the rule.
+- **Explicit pipeline vs LangGraph:** retrieve → guard → route → generate → log is a small graph you can step through. A framework helps when tools, retries, and branching evals grow.
+- **SQLite vs Postgres:** local default; engine already accepts a Postgres `DATABASE_URL`.
+
+---
+
+## Not claimed / next
+
+- Not live market data, not production brokerage advice, not three separate model workers.
+- Agent label is not yet used to **filter** retrieval.
+- `docker-compose.yml` is a stub; backend `Dockerfile` + Railway healthcheck are real.
+- JWT in `localStorage` is a demo tradeoff (production: httpOnly cookies, tighter CORS).
+
+Natural follow-ups: domain-filtered retrieve, embedding A/B, paraphrase-robust policy, latency/cost logs, `user_id` on audit rows + admin role.
