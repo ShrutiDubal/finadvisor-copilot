@@ -215,25 +215,3 @@ UI: `http://localhost:3010`
 | `GET` | `/logs` | yes |
 
 On Vercel, the API is mounted under `/api/backend` (`root_path` when `VERCEL` is set).
-
----
-
-## Design choices (interview)
-
-- **Lexical RAG vs embeddings:** corpus is small and entity-specific. “Alice Chen” must not retrieve Sarah. Keyword overlap plus a named-person boost is cheaper, faster, and easier to debug than a vector index. Next experiment: chunk market notes, embed, A/B hit@k vs this scorer.
-- **Keyword router vs LLM router:** deterministic, free, and ordered so client names beat the word “risk”. An LLM router is a later eval, not a default.
-- **Two guardrails:** do not pay for a banned query; still catch recommendation language in the completion.
-- **Phrase list vs classifier:** auditable and cheap. Weak on paraphrase — that is the next eval set (precision/recall), not a reason to skip the rule.
-- **Explicit pipeline vs LangGraph:** retrieve → guard → route → generate → log is a small graph you can step through. A framework helps when tools, retries, and branching evals grow.
-- **SQLite vs Postgres:** local default; engine already accepts a Postgres `DATABASE_URL`.
-
----
-
-## Not claimed / next
-
-- Not live market data, not production brokerage advice, not three separate model workers.
-- Agent label is not yet used to **filter** retrieval.
-- `docker-compose.yml` is a stub; backend `Dockerfile` + Railway healthcheck are real.
-- JWT in `localStorage` is a demo tradeoff (production: httpOnly cookies, tighter CORS).
-
-Natural follow-ups: domain-filtered retrieve, embedding A/B, paraphrase-robust policy, latency/cost logs, `user_id` on audit rows + admin role.
