@@ -215,3 +215,15 @@ UI: `http://localhost:3010`
 | `GET` | `/logs` | yes |
 
 On Vercel, the API is mounted under `/api/backend` (`root_path` when `VERCEL` is set).
+
+---
+
+## Conclusion
+
+FinAdvisor Copilot is a working demonstration of a **constrained LLM application**: retrieval, routing, generation, policy checks, and audit logging in one path, with a UI an advisor can actually use.
+
+The design priority is **trustworthiness over unconstrained fluency**. Answers are limited to retrieved context, recommendation-style language is blocked on both the inbound query and the model output, and every turn is persisted with the agent used and whether a guardrail fired. Retrieval is lexical and inspectable on a small, name-sensitive corpus; vector search remains a natural extension if the knowledge base grows.
+
+This is a **demo environment** with synthetic client and market documents — not live market data, not production investment advice, and not a substitute for a human advisor. The codebase is structured so the next increments are clear: domain-filtered retrieval, embedding-based ranking with a measured comparison to the current scorer, stronger policy coverage, and richer operational metrics (latency, cost, error rates).
+
+The result is a full-stack reference for how an advisor copilot can be specified, implemented, and explained end to end.
