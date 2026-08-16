@@ -49,6 +49,59 @@ Knowledge base content is **synthetic demo data** (not real client PII).
 
 ## How a request runs (`POST /chat`)
 
+```mermaid
+flowchart LR
+  subgraph UI["Next.js UI :3020"]
+    A[Login / Register]
+    B[Chat: query + agent + top-k]
+    C[Render answer, sources, guardrail badge]
+    D[Audit log page]
+  end
+
+  subgraph API["FastAPI :8000"]
+    E[JWT auth]
+    F[Retrieve top-k docs]
+    G{Query guardrail?}
+    H[Classify agent]
+    I[Gemini context-only]
+    J{Response guardrail?}
+    K[SQLite: chat + audit]
+    L[Safe fallback — skip LLM]
+  end
+
+  subgraph KB["Local knowledge base"]
+    M[".txt client / fund / market files"]
+  end
+
+  A --> E
+  B --> E
+  E --> F
+  F --> M
+  F --> G
+  G -->|blocked phrase| L
+  G -->|clean| H
+  H --> I
+  I --> J
+  J -->|hit| L
+  J -->|clear| K
+  L --> K
+  K --> C
+  K --> D
+```
+
+**Why each piece**
+
+| Piece | Role | Why this, not that |
+| --- | --- | --- |
+| Next.js | Login, chat, sources, logs | Advisors need a clickable product, not a notebook |
+| JWT | Protect `/chat` and `/logs` | API and UI can live on different origins (local or Vercel) |
+| Lexical retrieve | Pick the right `.txt` files | Tiny, name-heavy corpus; inspectable scores; no embedding runtime |
+| Query guardrail | Block “you should buy…” before generation | Don’t pay for or generate banned advice |
+| Agent label | `portfolio` / `client_research` / `market_context` | Matches how advisors think; stored on the audit row |
+| Gemini | Summarize **only** retrieved context | Fast/cheap; fallbacks if the model ID or key fails |
+| Response guardrail | Scan the completion | Models still emit recommendation language |
+| SQLite | Chat history + audit JSON | Zero-ops demo; Postgres URL already supported |
+
 ```text
 JWT user
   → retrieve top-k docs (keyword overlap + named-client boost)
