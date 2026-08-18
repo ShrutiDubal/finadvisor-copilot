@@ -75,11 +75,19 @@ flowchart LR
   K --> D
 ```
 
-**Left — product.** Login, chat, sources, audit log.  
-**Middle — control plane.** JWT, retrieve, dual guardrails, agent label, Gemini, persist.  
-**Bottom — evidence.** Client profiles, fund factsheet, Q1 2026 market notes.
+**Read this if you get lost (one request, left → right):**
 
-Blocked path skips Gemini. Both paths still write SQLite. That is the point.
+1. **Login / Register** — get a JWT. **Chat query** — send question + agent + top-k.
+2. **JWT auth** — no valid token, stop.
+3. **Retrieve top-k** from the **knowledge base** (client / fund / market `.txt` files).
+4. **Query guardrail** — if the question has a blocked phrase (“you should buy”) → **safe fallback, skip Gemini**. If **clean** → keep going.
+5. **Classify agent** — stamp client / portfolio / market (label, not three models).
+6. **Gemini context-only** — answer only from retrieved files.
+7. **Response guardrail** — if the answer is banned language → **safe fallback**. If **ok** → keep it.
+8. **SQLite** — every path is saved (blocked or not).
+9. **Answer, sources, badge** in chat. **Audit log** is the same turn as a paper trail.
+
+Start at **Chat**. End at **Audit log**. Middle is retrieve → maybe block → maybe Gemini → always save.
 
 ---
 
