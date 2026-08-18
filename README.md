@@ -75,7 +75,7 @@ flowchart LR
   K --> D
 ```
 
-**Read this if you get lost (one request, left → right):**
+
 
 1. **Login / Register** — get a JWT. **Chat query** — send question + agent + top-k.
 2. **JWT auth** — no valid token, stop.
