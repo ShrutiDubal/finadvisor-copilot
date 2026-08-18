@@ -38,26 +38,43 @@ Knowledge base content is **synthetic demo data** (not real client PII).
 ## How a request runs
 
 ```mermaid
-flowchart TB
-  B[Chat query]
-  E[JWT auth]
-  F[Retrieve top-k docs]
-  M[Knowledge base txt files]
-  G{Query guardrail}
-  L[Safe fallback]
-  H[Classify agent]
-  I[Gemini context-only]
-  J{Response guardrail}
-  K[SQLite audit]
-  C[UI answer and sources]
+flowchart LR
+  subgraph UI["Next.js UI"]
+    A[Login / Register]
+    B[Chat query]
+    C[Answer, sources, badge]
+    D[Audit log]
+  end
 
-  B --> E --> F --> M
+  subgraph Backend["FastAPI"]
+    E[JWT auth]
+    F[Retrieve top-k docs]
+    G{Query guardrail}
+    H[Classify agent]
+    I[Gemini context-only]
+    J{Response guardrail}
+    K[SQLite chat and audit]
+    L[Safe fallback skip LLM]
+  end
+
+  subgraph KB["Local knowledge base"]
+    M[Client, fund, and market files]
+  end
+
+  A --> E
+  B --> E
+  E --> F
+  F --> M
   F --> G
-  G -->|blocked| L --> K
-  G -->|clean| H --> I --> J
+  G -->|blocked| L
+  G -->|clean| H
+  H --> I
+  I --> J
   J -->|blocked| L
   J -->|ok| K
+  L --> K
   K --> C
+  K --> D
 ```
 
 **In plain terms:** authenticate → search local files → block bad questions → label agent → Gemini on retrieved context only → scan answer → save → show UI with sources.
