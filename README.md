@@ -1,41 +1,39 @@
 # FinAdvisor Copilot
 
-Compliance-aware advisor copilot: **retrieve → guard → route → generate → guard → audit**.
+**A compliance-aware advisor copilot — not another finance chatbot.**
 
-Built for advisor workflows — not a generic finance chatbot. Answers stay grounded in a local knowledge base, avoid direct product recommendations, and leave an audit trail.
+> Retrieve → Guard → Route → Generate → Guard → Audit
 
----
+Unconstrained LLMs invent numbers and say *“you should buy.”* In an advisor workflow, that is not a cute answer. It is a **trust failure**.
 
-## Problem
+FinAdvisor Copilot is an end-to-end demo of **Augmented Intelligence**: grounded retrieval, dual policy checks, specialist routing, and a full audit trail — behind a UI an advisor can actually click.
 
-Advisors ask about **client profiles**, **portfolio / allocation**, and **market or fund notes**. A raw LLM invents numbers and says “you should buy…”. In a regulated-style setting that is a product failure.
+**Synthetic demo data only.** Not real client PII. Not live market data. Not production investment advice.
 
-Success means:
-
-1. Answer only from retrieved documents.
-2. Block recommendation language on the **query** and **model output**.
-3. Show sources in the UI.
-4. Persist query, agent, guardrail flag, and response per user.
-
-Knowledge base content is **synthetic demo data** (not real client PII).
-
----
-
-## What shipped
-
-- **Auth** — register / login, bcrypt, JWT on chat and logs
-- **RAG** — lexical scoring over `backend/data/knowledge_base/*.txt`, top-k with source names
-- **Agents** — `portfolio`, `client_research`, `market_context`, plus auto keyword routing
-- **Guardrails** — phrase checks before generation (skip LLM) and after (replace unsafe text)
-- **LLM** — Gemini, context-only prompt; grounded fallback if API key missing
-- **Audit** — SQLite chat history + audit log (includes retrieved-doc JSON)
-- **UI** — Next.js chat (agent picker, sources, guardrail badge) and audit log page
-
-**Stack:** FastAPI · Next.js · SQLite · Gemini · deployed on Vercel
+<p align="center">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
+  <img alt="Gemini" src="https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white" />
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" />
+  <img alt="Vercel" src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" />
+</p>
 
 ---
 
-## How a request runs
+## Why this exists
+
+| What breaks with a raw LLM | What FinAdvisor enforces |
+| --- | --- |
+| Invented AUM, risk, or returns | Answers only from retrieved `.txt` notes |
+| “You should buy…” / guaranteed returns | Guardrail on the **question** and the **completion** |
+| No proof of what happened | JWT user + SQLite audit of query, agent, sources, flag |
+| Black-box chat | Sources, agent badge, and guardrail status in the UI |
+
+---
+
+## Architecture
+
+Three layers. One `POST /chat`.
 
 ```mermaid
 flowchart LR
@@ -77,40 +75,54 @@ flowchart LR
   K --> D
 ```
 
-**In plain terms:** authenticate → search local files → block bad questions → label agent → Gemini on retrieved context only → scan answer → save → show UI with sources.
+**Left — product.** Login, chat, sources, audit log.  
+**Middle — control plane.** JWT, retrieve, dual guardrails, agent label, Gemini, persist.  
+**Bottom — evidence.** Client profiles, fund factsheet, Q1 2026 market notes.
 
-Retrieval uses keyword overlap plus a boost when the query names Alice Chen, Bob Martinez, or Sarah Johnson (first and last name). Not FAISS — corpus is small and name-heavy.
-
----
-
-## Try in the UI
-
-**Grounded:**
-
-- What is Alice Chen's risk tolerance?
-- What were Q1 2026 market highlights?
-
-**Guardrail (blocks generation):**
-
-- You should buy the global equity fund
-
-Then check **Audit log**.
+Blocked path skips Gemini. Both paths still write SQLite. That is the point.
 
 ---
 
-## Local setup
+## What shipped
 
-**Backend** (`http://localhost:8000`)
+| Capability | How it works |
+| --- | --- |
+| **Auth** | bcrypt passwords · JWT on chat and logs |
+| **Retrieval** | Lexical scoring over whole KB files · named-client boost (Alice / Bob / Sarah) · top-k |
+| **Agents** | `portfolio` · `client_research` · `market_context` · auto (client names win over generic “risk”) |
+| **Policy** | Phrase list before generation (skip LLM) and after (replace unsafe text) |
+| **Generation** | Gemini, **context-only** · fallbacks if the model ID fails · file extract if no API key |
+| **Traceability** | Chat history + audit JSON of retrieved docs |
+| **UI** | Next.js · agent picker · sources · guardrail badge · audit page |
+
+Retrieval is **not** FAISS. The corpus is small and name-heavy — inspectable keyword search is the right default. Embeddings are the next measured experiment, not a resume keyword.
+
+---
+
+## 60-second demo
+
+1. Register / login.
+2. **“What is Alice Chen's risk tolerance?”** → client research · sources = her profile · moderate risk, not invented.
+3. **“You should buy the global equity fund.”** → guardrail · Gemini skipped · safe fallback.
+4. Open **Audit log** → same turns, agent + triggered vs clear.
+
+Also try: *What were Q1 2026 market highlights?*
+
+---
+
+## Run locally
+
+**API** — `http://localhost:8000`
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate          # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-**Frontend** (`http://localhost:3020`)
+**UI** — `http://localhost:3020`
 
 ```bash
 cd frontend
@@ -118,7 +130,7 @@ npm install
 npm run dev
 ```
 
-Create `backend/.env`:
+`backend/.env`:
 
 ```env
 GEMINI_API_KEY=your_key
@@ -128,8 +140,8 @@ DATABASE_URL=sqlite:///./finadvisor.db
 
 ---
 
-## Conclusion
+## Design stance
 
-FinAdvisor is a **constrained LLM demo**: retrieval, routing, generation, dual guardrails, and audit logging in one pipeline with a usable UI. Synthetic data only — not live market data or production investment advice.
+Trustworthiness over unconstrained fluency. The human advisor still owns the recommendation. The copilot briefs from files, refuses sales language, and leaves a paper trail.
 
-Priority is **trustworthiness over fluency**: grounded context, blocked recommendation language, and a log of every turn.
+**Next:** domain-filtered retrieve · gold-set evals (hit@k, guardrail precision/recall, latency, cost) · embedding A/B vs this scorer.
